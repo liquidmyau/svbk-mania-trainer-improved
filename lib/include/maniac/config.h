@@ -19,6 +19,7 @@ namespace maniac {
         int randomization_mean = 0;
         int randomization_stddev = 0;
         int humanization_type = DYNAMIC_HUMANIZATION;
+        int ur_jitter_stddev = 6;
 
         std::string keys = "asdfjkl;";
     };

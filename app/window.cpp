@@ -149,9 +149,33 @@ void window::start(const std::function<void()> &body) {
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 
     // Setup Dear ImGui style
-    //ImGui::StyleColorsDark();
-    //ImGui::StyleColorsClassic();
-    ImGui::StyleColorsLight();
+    ImGui::StyleColorsDark();
+
+    auto &style = ImGui::GetStyle();
+    style.WindowRounding = 8.0f;
+    style.FrameRounding = 6.0f;
+    style.GrabRounding = 6.0f;
+    style.ChildRounding = 8.0f;
+    style.WindowPadding = ImVec2(18.0f, 14.0f);
+    style.ItemSpacing = ImVec2(12.0f, 10.0f);
+    style.ScrollbarSize = 12.0f;
+
+    ImVec4 *colors = style.Colors;
+    colors[ImGuiCol_WindowBg] = ImVec4(0.12f, 0.12f, 0.14f, 1.0f);
+    colors[ImGuiCol_ChildBg] = ImVec4(0.18f, 0.18f, 0.20f, 0.9f);
+    colors[ImGuiCol_FrameBg] = ImVec4(0.18f, 0.18f, 0.22f, 1.0f);
+    colors[ImGuiCol_FrameBgHovered] = ImVec4(0.26f, 0.26f, 0.32f, 1.0f);
+    colors[ImGuiCol_FrameBgActive] = ImVec4(0.30f, 0.30f, 0.38f, 1.0f);
+    colors[ImGuiCol_Button] = ImVec4(0.22f, 0.46f, 0.36f, 0.9f);
+    colors[ImGuiCol_ButtonHovered] = ImVec4(0.27f, 0.62f, 0.47f, 1.0f);
+    colors[ImGuiCol_ButtonActive] = ImVec4(0.19f, 0.46f, 0.37f, 1.0f);
+    colors[ImGuiCol_Header] = ImVec4(0.21f, 0.46f, 0.56f, 0.8f);
+    colors[ImGuiCol_HeaderHovered] = ImVec4(0.27f, 0.60f, 0.70f, 1.0f);
+    colors[ImGuiCol_HeaderActive] = ImVec4(0.17f, 0.42f, 0.56f, 1.0f);
+    colors[ImGuiCol_SliderGrab] = ImVec4(0.34f, 0.76f, 0.60f, 1.0f);
+    colors[ImGuiCol_SliderGrabActive] = ImVec4(0.27f, 0.62f, 0.47f, 1.0f);
+    colors[ImGuiCol_TitleBg] = ImVec4(0.09f, 0.09f, 0.12f, 1.0f);
+    colors[ImGuiCol_TitleBgActive] = ImVec4(0.14f, 0.14f, 0.18f, 1.0f);
 
     // Setup Platform/Renderer backends
     ImGui_ImplWin32_Init(hwnd);

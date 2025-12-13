@@ -104,3 +104,27 @@ void maniac::humanize_dynamic(std::vector<osu::HitObject> &hit_objects, int modi
 
     debug("dynamically humanized %d hit objects with modifier %d", hit_objects.size(), modifier);
 }
+
+void maniac::apply_ur_jitter(std::vector<osu::HitObject> &hit_objects, int stddev) {
+    if (stddev <= 0) {
+        return;
+    }
+
+    std::random_device rd;
+    std::mt19937 gen{rd()};
+
+    std::normal_distribution<> start_distr{0.0, static_cast<double>(stddev)};
+    std::normal_distribution<> end_distr{0.0, static_cast<double>(stddev) / 2.0};
+
+    for (auto &hit_object : hit_objects) {
+        const auto start_jitter = static_cast<int>(std::round(start_distr(gen)));
+        hit_object.start_time += start_jitter;
+
+        if (hit_object.is_slider) {
+            const auto end_jitter = static_cast<int>(std::round(end_distr(gen)));
+            hit_object.end_time = std::max(hit_object.start_time + 1, hit_object.end_time + start_jitter + end_jitter);
+        }
+    }
+
+    debug("applied ur jitter with stddev %d to %d hit objects", stddev, hit_objects.size());
+}

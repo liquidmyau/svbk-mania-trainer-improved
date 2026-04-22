@@ -79,15 +79,90 @@ int main(int, char **) {
     };
 
     auto thread = std::jthread([&message, &run](const std::stop_token& token) {
+        int retries_done = 0;
+        bool was_auto_retry = false;
+
         while (!token.stop_requested()) {
             try {
                 auto osu = osu::Osu();
 
                 while (!token.stop_requested()) {
+                    // At the start of each run: if the previous play was NOT
+                    // triggered by our auto-retry, this is a new map — reset
+                    // the retry counter. If it WAS our retry, keep the counter
+                    // so we can track total retries for this map session.
+                    if (!was_auto_retry) {
+                        retries_done = 0;
+                    }
+                    was_auto_retry = false;
+
                     run(osu);
+
+                    // After run() returns (map ended), check auto-retry
+                    if (maniac::config.auto_retry && !token.stop_requested()) {
+                        bool infinite = (maniac::config.auto_retry_count == 0);
+                        bool has_retries_left = infinite || (retries_done < maniac::config.auto_retry_count);
+
+                        if (has_retries_left) {
+                            retries_done++;
+
+                            // Build status message showing retry progress
+                            if (infinite) {
+                                message = "auto-retrying (#" + std::to_string(retries_done) + "/inf)";
+                            } else {
+                                message = "auto-retrying (#" + std::to_string(retries_done) + "/" + std::to_string(maniac::config.auto_retry_count) + ")";
+                            }
+
+                            // Trigger the retry: holds '~' key for 1.5 seconds
+                            // This uses osu!'s built-in Quick Retry mechanism.
+                            // Requires the '~' key to be bound as Quick Retry in osu! settings.
+                            maniac::trigger_retry();
+
+                            // Wait for the map to restart after retry.
+                            // Timeout after 5 seconds — if the map doesn't restart,
+                            // the user probably exited to song select manually.
+                            auto retry_start = std::chrono::steady_clock::now();
+                            bool map_restarted = false;
+
+                            while (!token.stop_requested()) {
+                                if (osu.is_playing()) {
+                                    map_restarted = true;
+                                    break;
+                                }
+                                auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(
+                                    std::chrono::steady_clock::now() - retry_start).count();
+                                if (elapsed > 5) {
+                                    debug("auto-retry: map did not restart within 5s, user likely left the map");
+                                    break;
+                                }
+                                std::this_thread::sleep_for(std::chrono::milliseconds(250));
+                            }
+
+                            if (map_restarted) {
+                                was_auto_retry = true;
+                                // Continue the inner loop → run(osu) will be called again.
+                                // block_until_playing() inside run() will return immediately
+                                // since the map is already playing.
+                                continue;
+                            } else {
+                                // Map didn't restart — user left the map.
+                                // Reset retry state and wait for a new map naturally.
+                                retries_done = 0;
+                                was_auto_retry = false;
+                            }
+                        }
+                    }
+
+                    // No auto-retry triggered (either disabled or retry count exhausted).
+                    // Reset retry state for the next map.
+                    retries_done = 0;
                 }
             } catch (std::exception &err) {
                 (message = err.what()).append(" (retrying in 2 seconds)");
+
+                // Reset retry state on error — the Osu object will be recreated
+                retries_done = 0;
+                was_auto_retry = false;
 
                 std::this_thread::sleep_for(std::chrono::seconds(2));
             }
@@ -103,6 +178,8 @@ int main(int, char **) {
         ImVec4 status_color = ImVec4(0.76f, 0.78f, 0.80f, 1.0f);
         if (message.find("playing") != std::string::npos) {
             status_color = ImVec4(0.34f, 0.76f, 0.60f, 1.0f);
+        } else if (message.find("auto-retrying") != std::string::npos) {
+            status_color = ImVec4(0.90f, 0.65f, 0.20f, 1.0f); // amber for auto-retry
         } else if (message.find("failed") != std::string::npos || message.find("retrying") != std::string::npos) {
             status_color = ImVec4(0.95f, 0.55f, 0.35f, 1.0f);
         }
@@ -147,6 +224,24 @@ int main(int, char **) {
         ImGui::DragInt("Tap time", &maniac::config.tap_time, 0.2f, 5, 120, "%d ms");
         ImGui::SameLine();
         help_marker("How long a key is held down for a single keypress, in milliseconds.");
+        ImGui::EndChild();
+
+        ImGui::Dummy(ImVec2(0.0f, 8.0f));
+        ImGui::SeparatorText("Auto-retry");
+        ImGui::BeginChild("##retry", ImVec2(0, 100), true);
+        ImGui::Checkbox("Enable auto-retry", &maniac::config.auto_retry);
+        ImGui::SameLine();
+        help_marker("Automatically retries the beatmap after failing or passing. Holds the '`' (tilde) key for 1.5s to trigger osu!'s Quick Retry. Make sure Quick Retry is bound to '~' in osu! settings.");
+
+        ImGui::DragInt("Max retries", &maniac::config.auto_retry_count, 1.0f, 0, 999, "%d");
+        ImGui::SameLine();
+        help_marker("Maximum number of auto-retries per beatmap session. Set to 0 for infinite retries.");
+
+        if (maniac::config.auto_retry_count == 0) {
+            ImGui::TextDisabled("Mode: infinite retries");
+        } else {
+            ImGui::TextDisabled("Mode: up to %d retries", maniac::config.auto_retry_count);
+        }
         ImGui::EndChild();
 
         ImGui::Dummy(ImVec2(0.0f, 10.0f));

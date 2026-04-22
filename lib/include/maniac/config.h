@@ -21,6 +21,9 @@ namespace maniac {
         int humanization_type = DYNAMIC_HUMANIZATION;
         int ur_jitter_stddev = 6;
 
+        bool auto_retry = false;
+        int auto_retry_count = 0; // 0 = infinite retries
+
         std::string keys = "asdfjkl;";
     };
 }

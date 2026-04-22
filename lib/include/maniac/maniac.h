@@ -34,18 +34,20 @@ namespace maniac {
         }
     };
 
-	inline config config;
+        inline config config;
 
-	inline osu::Osu *osu;
+        inline osu::Osu *osu;
 
-	void play(const std::vector<Action> &actions);
+        void play(const std::vector<Action> &actions);
 
-	void block_until_playing();
+        void block_until_playing();
+
+        void trigger_retry();
 
         void randomize(std::vector<osu::HitObject> &hit_objects, int mean, int stddev);
     void humanize_static(std::vector<osu::HitObject> &hit_objects, int modifier);
     void humanize_dynamic(std::vector<osu::HitObject> &hit_objects, int modifier);
     void apply_ur_jitter(std::vector<osu::HitObject> &hit_objects, int stddev);
 
-	std::vector<Action> to_actions(std::vector<osu::HitObject> &hit_objects, int32_t min_time);
+        std::vector<Action> to_actions(std::vector<osu::HitObject> &hit_objects, int32_t min_time);
 }

@@ -8,38 +8,79 @@ namespace maniac {
         }
     }
 
-	void block_until_playing() {
-		while (true) {
-			if (osu->is_playing()) {
+        void block_until_playing() {
+                while (true) {
+                        if (osu->is_playing()) {
                 break;
             }
 
             std::this_thread::sleep_for(std::chrono::milliseconds(250));
-		}
-	}
+                }
+        }
 
-	void play(const std::vector<Action> &actions) {
-		reset_keys();
+        void play(const std::vector<Action> &actions) {
+                reset_keys();
 
-		size_t cur_i = 0;
-		auto cur_time = 0;
-		auto raw_actions = actions.data();
-		auto total_actions = actions.size();
+                size_t cur_i = 0;
+                auto cur_time = 0;
+                auto raw_actions = actions.data();
+                auto total_actions = actions.size();
 
-		while (cur_i < total_actions) {
-			if (!osu->is_playing())
-				return;
+                while (cur_i < total_actions) {
+                        if (!osu->is_playing())
+                                return;
 
-			cur_time = osu->get_game_time();
-			while (cur_i < total_actions && (raw_actions + cur_i)->time <= cur_time) {
-				(raw_actions + cur_i)->execute();
+                        cur_time = osu->get_game_time();
+                        while (cur_i < total_actions && (raw_actions + cur_i)->time <= cur_time) {
+                                (raw_actions + cur_i)->execute();
 
-				cur_i++;
-			}
+                                cur_i++;
+                        }
 
-			std::this_thread::sleep_for(std::chrono::nanoseconds(100));
-		}
-	}
+                        std::this_thread::sleep_for(std::chrono::nanoseconds(100));
+                }
+        }
+
+    void trigger_retry() {
+        debug("auto-retry: triggering retry by holding quick-retry key");
+
+        // Get the virtual key code for the grave accent key (backtick `)
+        // This is the physical key that osu! binds to Quick Retry by default.
+        // VK_OEM_3 (0xC0) is the standard VK code for `~ on US keyboard layouts.
+        // We use VkKeyScanEx for locale compatibility, falling back to VK_OEM_3.
+        static auto layout = GetKeyboardLayout(0);
+        short vk_result = VkKeyScanEx('`', layout);
+        short retry_vk = (vk_result != -1) ? (vk_result & 0xFF) : 0xC0;
+
+        // Brief delay before retry to avoid conflicting with manual key presses
+        // and to allow osu! to transition out of the playing state cleanly.
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+        // Check if the map is already playing again (e.g. user manually retried)
+        if (osu && osu->is_playing()) {
+            debug("auto-retry: map already playing, skipping retry");
+            return;
+        }
+
+        // Hold the quick-retry key down
+        Process::send_scan_code(retry_vk, true);
+
+        // Use try-catch to guarantee the key is released even if an error occurs
+        // during the hold period. A stuck key would break osu! input.
+        try {
+            // Hold for 1.5 seconds — osu!'s quick retry requires a long press
+            std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+        } catch (...) {
+            // Ensure key release on any exception
+            Process::send_scan_code(retry_vk, false);
+            throw;
+        }
+
+        // Release the key
+        Process::send_scan_code(retry_vk, false);
+
+        debug("auto-retry: quick-retry key released, waiting for map restart");
+    }
 
     std::vector<Action> to_actions(std::vector<osu::HitObject> &hit_objects, int32_t min_time) {
         if (hit_objects.empty()) {

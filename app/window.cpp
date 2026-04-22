@@ -2,6 +2,7 @@
 
 #include "font.h"
 
+#define NOMINMAX
 #include <d3d9.h>
 #include <tchar.h>
 #include <stdexcept>
@@ -12,6 +13,7 @@
 #include <algorithm>
 
 #include <maniac/common.h>
+#include <maniac/maniac.h>
 
 // TODO: Most of this is taken straight out of some example in the imgui repository, needs to be refactored
 
@@ -217,9 +219,9 @@ void window::start(const std::function<void()> &body) {
 
         body();
 
-        maniac::config.tap_time = max(0, maniac::config.tap_time);
-        maniac::config.humanization_modifier = max(0, maniac::config.humanization_modifier);
-        maniac::config.auto_retry_count = max(0, maniac::config.auto_retry_count);
+        maniac::config.tap_time = (std::max)(0, maniac::config.tap_time);
+        maniac::config.humanization_modifier = (std::max)(0, maniac::config.humanization_modifier);
+        maniac::config.auto_retry_count = (std::max)(0, maniac::config.auto_retry_count);
 
         ImGui::EndFrame();
         g_pd3dDevice->SetRenderState(D3DRS_ZENABLE, FALSE);

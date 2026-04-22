@@ -173,7 +173,8 @@ int main(int, char **) {
         ImGui::SetNextWindowSize(ImVec2(560, 0), ImGuiCond_Always);
         ImGui::Begin("maniac", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoResize);
 
-        ImGui::SeparatorText("Status");
+        ImGui::Separator();
+        ImGui::Text("Status");
 
         ImVec4 status_color = ImVec4(0.76f, 0.78f, 0.80f, 1.0f);
         if (message.find("playing") != std::string::npos) {
@@ -187,7 +188,8 @@ int main(int, char **) {
         ImGui::TextWrapped("Keep osu! open and load a beatmap. The trainer will auto-start when the map begins.");
 
         ImGui::Dummy(ImVec2(0.0f, 8.0f));
-        ImGui::SeparatorText("Timing behaviour");
+        ImGui::Separator();
+        ImGui::Text("Timing behaviour");
 
         ImGui::BeginChild("##timing", ImVec2(0, 165), true);
         ImGui::TextDisabled("Humanization");
@@ -206,14 +208,16 @@ int main(int, char **) {
         ImGui::EndChild();
 
         ImGui::Dummy(ImVec2(0.0f, 8.0f));
-        ImGui::SeparatorText("UR smoothing");
+        ImGui::Separator();
+        ImGui::Text("UR smoothing");
         ImGui::BeginChild("##ur", ImVec2(0, 85), true);
         ImGui::TextWrapped("Applies subtle per-note jitter so your unstable rate looks like a natural player instead of perfectly robotic inputs.");
         ImGui::SliderInt("Jitter stddev", &maniac::config.ur_jitter_stddev, 0, 20, "%d ms");
         ImGui::EndChild();
 
         ImGui::Dummy(ImVec2(0.0f, 8.0f));
-        ImGui::SeparatorText("Input shaping");
+        ImGui::Separator();
+        ImGui::Text("Input shaping");
         ImGui::BeginChild("##input", ImVec2(0, 155), true);
         ImGui::DragInt("Latency compensation", &maniac::config.compensation_offset, 0.5f, -50, 50, "%d ms");
         ImGui::SameLine();
@@ -227,7 +231,8 @@ int main(int, char **) {
         ImGui::EndChild();
 
         ImGui::Dummy(ImVec2(0.0f, 8.0f));
-        ImGui::SeparatorText("Auto-retry");
+        ImGui::Separator();
+        ImGui::Text("Auto-retry");
         ImGui::BeginChild("##retry", ImVec2(0, 100), true);
         ImGui::Checkbox("Enable auto-retry", &maniac::config.auto_retry);
         ImGui::SameLine();

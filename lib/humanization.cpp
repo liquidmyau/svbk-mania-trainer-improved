@@ -1,3 +1,4 @@
+#define NOMINMAX
 #include <maniac/common.h>
 #include <maniac/maniac.h>
 
@@ -6,30 +7,30 @@ void maniac::randomize(std::vector<osu::HitObject> &hit_objects, int mean, int s
         return;
     }
 
-	std::random_device rd;
-	std::mt19937 gen{rd()};
+        std::random_device rd;
+        std::mt19937 gen{rd()};
 
-	std::normal_distribution<> distr{static_cast<double>(mean), static_cast<double>(stddev)};
+        std::normal_distribution<> distr{static_cast<double>(mean), static_cast<double>(stddev)};
 
-	for (auto &hit_object : hit_objects) {
+        for (auto &hit_object : hit_objects) {
         // if it's a slider we want to randomize start and end, if it's not we ignore end anyway
         hit_object.start_time += std::round(distr(gen));
         hit_object.end_time += std::round(distr(gen));
-	}
+        }
 
-	debug("randomized %d hit objects with offsets along a normal distribution with mean %d and stddev %d",
+        debug("randomized %d hit objects with offsets along a normal distribution with mean %d and stddev %d",
         hit_objects.size(), mean, stddev);
 }
 
 void maniac::humanize_static(std::vector<osu::HitObject> &hit_objects, int modifier) {
-	if (!modifier) {
+        if (!modifier) {
         return;
     }
 
-	const auto actual_modifier = static_cast<double>(modifier) / 100.0;
+        const auto actual_modifier = static_cast<double>(modifier) / 100.0;
 
     // count number of hits/unit of time (slice size)
-	constexpr auto slice_size = 1000;
+        constexpr auto slice_size = 1000;
 
     const auto latest_hit = std::max_element(hit_objects.begin(), hit_objects.end(), [](auto a, auto b) {
         return a.end_time < b.end_time;
@@ -58,7 +59,7 @@ void maniac::humanize_static(std::vector<osu::HitObject> &hit_objects, int modif
         }
     }
 
-	debug("statically humanized %d hit objects (%d slices of %dms) with modifier %d", hit_objects.size(), slices.size(), slice_size, modifier);
+        debug("statically humanized %d hit objects (%d slices of %dms) with modifier %d", hit_objects.size(), slices.size(), slice_size, modifier);
 }
 
 void maniac::humanize_dynamic(std::vector<osu::HitObject> &hit_objects, int modifier) {
